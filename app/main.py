@@ -1,13 +1,15 @@
 from fastapi import FastAPI, HTTPException, Body, Path
 import requests
 import json
-from app.database import add_joke
+from app.database import add_joke, update_joke_by_id, delete_joke_by_id
+from app.models import Joke
 app = FastAPI()
 
 # Bases url's
 joke_url = 'https://icanhazdadjoke.com/'
 chuck_url = 'https://api.chucknorris.io/jokes/'
 
+# Root 
 @app.get('/squadmakers/api/')
 def root():
 
@@ -23,6 +25,7 @@ def root():
                 json.loads(res)
             }
 
+# GET a joke
 @app.get('/squadmakers/api/{chuck_or_joke}')
 def get_some_funny_stuff(chuck_or_joke: str = Path(...)):
     url = 'http://'
@@ -41,11 +44,21 @@ def get_some_funny_stuff(chuck_or_joke: str = Path(...)):
 
     return json.loads(res)
 
+# Post a joke in mongodb database
 @app.post('/squadmakers/api/new_joke/{joke}')
-def put_joke(joke: str = Path(...)):
-    result = add_joke(joke)
-    return {
-        'status': 'success',
-        'id': str(result),
-        'joke': joke
-        }
+def post_joke(joke: str = Path(...), my_joke: Joke = Body(...)):
+    my_joke.joke = joke
+    joke_id_inserted = add_joke(my_joke.dict())
+    return {'res': 'success'}
+    
+# Update a joke with number param
+@app.put('/squadmakers/api/update_joke/{id}')
+def update_joke(id: int = Path(...), my_joke: Joke = Body(...)):
+    new_joke = update_joke_by_id(id, my_joke.joke)
+    return {'res': 'success'}
+
+# Delete a joke with number param
+@app.delete('/squadmakers/api/delete_joke/{id}')
+def delete_joke(id: int = Path(...)):
+    result = delete_joke_by_id(id)
+    return {'res': 'success'}
